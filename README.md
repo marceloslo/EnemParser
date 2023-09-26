@@ -1,5 +1,7 @@
 # EnemParser
 
+Um parser de provas do enem.
+
 ## O que fazer?
 
 Escolher uma prova laranja.
