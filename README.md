@@ -22,7 +22,7 @@ Colocar o csv nesse repositório na pasta Data
 
 - Marcelo: ENEM_2022_P1_CAD_09_DIA_1_LARANJA_LEDOR.pdf (exemplo)
 - Thaís: ENEM_2021_P1_CAD_09_DIA_1_LARANJA_LEDOR.pdf
-- Marcelo: ENEM_2021_P1_CAD_11_DIA_2_LARANJA_LEDOR.pdf (Bugs para apagar coisa por causa do encoding)
+- Marcelo: ENEM_2021_P1_CAD_11_DIA_2_LARANJA_LEDOR.pdf 
 - Thaís: ENEM_2022_P1_CAD_11_DIA_2_LARANJA_LEDOR.pdf
 - Victor: ENEM_2020_P1_CAD_11_DIA_2_LARANJA_LEDOR.pdf
 - Victor: ENEM_2020_P1_CAD_09_DIA_1_LARANJA_LEDOR.pdf (jah estava sem imagem)
