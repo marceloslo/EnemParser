@@ -3,6 +3,7 @@ import pandas as pd
 import openai
 import numpy as np
 import time
+import sys
 
 class DataHandler:
     def __init__(self, input_path_1, input_path_2, target_path_1, target_path_2):
@@ -21,9 +22,8 @@ class DataHandler:
         self.data_1.to_csv(self.target_path_1, index=False)
         self.data_2.to_csv(self.target_path_2, index=False)
 
-
 class Solver:
-    def __init__(self, model="gpt-4", seed=10, temperature=0, logprobs=True, top_logprobs=5, max_tokens=1):
+    def __init__(self, model, seed=10, temperature=0, logprobs=True, top_logprobs=5, max_tokens=1):
         self.model = model
         self.seed = seed
         self.temperature = temperature
@@ -58,7 +58,7 @@ class Solver:
         return openai.ChatCompletion.create(
             model=self.model,
             messages=[
-                {"role": "assistant", "content": "Answer multiple choice questions with a single alternative (A B C D E)."},
+                {"role": "assistant", "content": "Responda a questão de multipla escolha retornando uma única alternativa dentre as 5 apresentadas"},
                 {"role": "user", "content": prompt}
             ],
             logprobs=self.logprobs,
@@ -67,7 +67,7 @@ class Solver:
             seed=self.seed,
             temperature=self.temperature
         )
-
+    
     def manipulate_completion_response(self, response_object):
         top_logprobs = response_object.choices[0].logprobs.content[0].top_logprobs
         top_logprobs_dict = {obj["token"]: obj["logprob"] for obj in top_logprobs}
@@ -80,35 +80,42 @@ class Solver:
         response_object = self.create_completion_object(input_prompt)
         top_logprobs = self.manipulate_completion_response(response_object)
         response_series = pd.Series({
-            "gpt-4_answer": response_object.choices[0].message.content,
-            "gpt-4_probs": top_logprobs
+            f"{self.model}_answer": response_object.choices[0].message.content,
+            f"{self.model}_probs": top_logprobs
         })
         time.sleep(3)
         return response_series
 
 
-def main(input_path_1, input_path_2, target_path_1, target_path_2, api_key):
+def main(input_path_1, input_path_2, target_path_1, target_path_2, api_key, model):
     openai.api_key = api_key
 
     data_handler = DataHandler(input_path_1, input_path_2, target_path_1, target_path_2)
     data_handler.read_data()
 
-    solver = Solver()
+    solver = Solver(model=model)
 
-    data_handler.data_1[['gpt-4_answer', 'gpt-4_probs']] = data_handler.data_1.apply(solver.get_answer_and_probs, axis=1)
-    data_handler.data_2[['gpt-4_answer', 'gpt-4_probs']] = data_handler.data_2.apply(solver.get_answer_and_probs, axis=1)
+    answer_col_name = f"{model}_answer"
+    probs_col_name = f"{model}_probs"
+
+    data_handler.data_1[[answer_col_name, probs_col_name]] = data_handler.data_1.apply(solver.get_answer_and_probs, axis=1)
+    data_handler.data_2[[answer_col_name, probs_col_name]] = data_handler.data_2.apply(solver.get_answer_and_probs, axis=1)
 
     data_handler.save_data()
+    
 
 if __name__ == "__main__":
-    if len(sys.argv) != 6:
-        print("Usage: python solver_gpt4.py <input_path_1> <input_path_2> <target_path_1> <target_path_2> <api_key>")
+    if len(sys.argv) != 7:
+        print("Usage: python script_name.py <input_path_1> <input_path_2> <target_path_1> <target_path_2> <api_key> <model>")
         sys.exit(1)
-
+    
     input_path_1 = sys.argv[1]
     input_path_2 = sys.argv[2]
     target_path_1 = sys.argv[3]
     target_path_2 = sys.argv[4]
     api_key = sys.argv[5]
+    model = sys.argv[6]
 
-    main(input_path_1, input_path_2, target_path_1, target_path_2, api_key)
+    main(input_path_1, input_path_2, target_path_1, target_path_2, api_key, model)
+
+

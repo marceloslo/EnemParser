@@ -17,9 +17,10 @@ The script is executed from the command line and requires five arguments:
 - target_path_1: Path where the first output CSV file will be saved.
 - target_path_2: Path where the second output CSV file will be saved.
 - api_key: OpenAI API key.
+- model: OpenAI model that will perform the test.
 
 ### To run the script, use the following command format:
-python script_name.py input_path_1 input_path_2 target_path_1 target_path_2 api_key
+python script_name.py input_path_1 input_path_2 target_path_1 target_path_2 api_key model
 
 ## File Format
 Ensure that the first day test don't have 'redação' in it's structure.
@@ -27,7 +28,6 @@ Ensure that the first day test don't have 'redação' in it's structure.
 ## Model Parameters
 All model parameters are defined in the code. For any necessary changes, visit implementation. Here are the default values:
 
-- model="gpt-4"
 - seed=10 
 - temperature=0 
 - logprobs=True 

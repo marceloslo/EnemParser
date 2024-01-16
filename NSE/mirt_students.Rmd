@@ -1,0 +1,124 @@
+---
+title: "MIRT for Students Calculus of NSE"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+# install.packages("mirt")
+# install.packages("dplyr")
+# install.packages("readr")
+# install.packages("psych")
+library(mirt)
+library(dplyr)
+library(readr)
+library(psych)
+```
+
+---
+Data Reading
+---
+
+```{r}
+df <- read_delim('./EnemParser/MicrodadosEstudantes/MICRODADOS_ENEM_2022.csv', 
+                                      delim = ';', 
+                                      locale = locale(encoding = "ISO-8859-1", decimal_mark = ","))
+```
+
+```{r}
+head(df)
+```
+
+---
+Data Treatment
+---
+
+````{r}
+# Selecionar as features
+selected_columns <- c('Q002', 'Q001', 'Q012', 'Q024', 'Q009', 'Q019', 'Q008', 'Q010', 'Q025', 'Q016', 'Q018', 'Q014', 'Q013')
+df_selected <- df %>% select(all_of(selected_columns))
+
+# Converter as respostas
+convert_to_numeric <- function(x) {
+    as.numeric(factor(x, levels = c("A", "B", "C", "D", "E", "F", "G", "H"), labels = c(1, 2, 3, 4, 5, 6, 7, 8)))}
+````
+
+```{r}
+df_selected <- df_selected %>%
+mutate(across(everything(), convert_to_numeric))
+```
+
+```{r}
+# Exibir as primeiras linhas para verificar
+head(df_selected)
+```
+
+---
+IRT Model Fitting
+---
+
+```{r}
+model <- mirt(df_selected, 1, itemtype = "graded", method = "EM")
+```
+
+```{r}
+# Model summary
+summary(model)
+```
+
+---
+Estimate Latent Trait Scores
+---
+
+```{r}
+# Estimativa dos escores de traço latente
+fscores_data <- fscores(model, method = "EAP", full.scores = TRUE)
+```
+
+```{r}
+head(fscores_data)
+```
+
+
+```{r}
+head(df_selected)
+```
+
+```{r}
+print(dim(df_selected))
+```
+
+
+
+```{r}
+# Adicionar os escores de traço latente ao dataframe original
+df$NSE_Score <- fscores_data[,1]
+```
+
+```{r}
+print(dim(df))
+```
+
+
+```{r}
+# Verificar as primeiras linhas para confirmar que os escores foram adicionados
+head(df)
+```
+
+---
+Transform Scores to a New Scale
+---
+
+```{r}
+# Assuming df$NSE_Score contains the IRT estimated scores
+mean_2022 <- mean(df$NSE_Score, na.rm = TRUE)
+sd_2022 <- sd(df$NSE_Score, na.rm = TRUE)
+
+# Transform the scores to the new scale
+df$NSE_Score <- (df$NSE_Score - mean_2022) / sd_2022 * 1 + 5
+```
+
+
+```{r}
+# Salvar o dataframe com os escores de traço latente em um arquivo CSV
+write_csv(df, "NSE_Scores_Students.csv")
+```
