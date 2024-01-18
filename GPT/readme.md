@@ -3,6 +3,8 @@
 ## Description
 This script is designed to process and solve ENEM tests using OpenAI's models. It reads questions from specified CSV files, generates answers using a model, calculates the probabilities for each answer, and saves the results in new CSV files. 
 
+NEEDS TO BE UPDATED!
+
 ## Requirements
 - Python
 - Pandas library
