@@ -6,21 +6,23 @@ import time
 import sys
 
 class DataHandler:
-    def __init__(self, input_path_1, input_path_2, target_path_1, target_path_2):
-        self.input_path_1 = input_path_1
-        self.input_path_2 = input_path_2
-        self.target_path_1 = target_path_1
-        self.target_path_2 = target_path_2
-        self.data_1 = None
-        self.data_2 = None
+    def __init__(self, input_folder, output_folder):
+        self.input_folder = input_folder
+        self.output_folder = output_folder
+        self.data_files = {}
 
     def read_data(self):
-        self.data_1 = pd.read_csv(self.input_path_1)
-        self.data_2 = pd.read_csv(self.input_path_2)
+        for file in os.listdir(self.input_folder):
+            if file.endswith('.csv'):
+                file_path = os.path.join(self.input_folder, file)
+                self.data_files[file] = pd.read_csv(file_path)
 
     def save_data(self):
-        self.data_1.to_csv(self.target_path_1, index=False)
-        self.data_2.to_csv(self.target_path_2, index=False)
+        for file_name, data in self.data_files.items():
+            output_file_name = f'solution_{file_name}'
+            output_file_path = os.path.join(self.output_folder, output_file_name)
+            data.to_csv(output_file_path, index=False)
+
 
 class Solver:
     def __init__(self, model, seed=10, temperature=0, logprobs=True, top_logprobs=5, max_tokens=1):
@@ -37,7 +39,7 @@ class Solver:
         return e_x / e_x.sum(axis=-1, keepdims=True)
 
     @staticmethod
-    def clean_probs(top_probs, valid_tokens={'A', 'B', 'C', 'D', 'E'}, default_prob=0.0001):
+    def clean_probs(top_probs, valid_tokens={'A', 'B', 'C', 'D', 'E'}, default_prob=0.0001): 
         combined_probs = {}
         for token, prob in top_probs.items():
             stripped_token = token.strip()
@@ -58,7 +60,7 @@ class Solver:
         return openai.ChatCompletion.create(
             model=self.model,
             messages=[
-                {"role": "assistant", "content": "Responda a questão de multipla escolha retornando uma única alternativa dentre as 5 apresentadas"},
+                {"role": "assistant", "content": "You are designed to answer the following multiple choice question. Without adding any extra characters, spaces, or newline characters in the answer, provide a single alternative as the answer."},
                 {"role": "user", "content": prompt}
             ],
             logprobs=self.logprobs,
@@ -87,10 +89,10 @@ class Solver:
         return response_series
 
 
-def main(input_path_1, input_path_2, target_path_1, target_path_2, api_key, model):
+def main(input_folder, output_folder, api_key, model):
     openai.api_key = api_key
 
-    data_handler = DataHandler(input_path_1, input_path_2, target_path_1, target_path_2)
+    data_handler = DataHandler(input_folder, output_folder)
     data_handler.read_data()
 
     solver = Solver(model=model)
@@ -98,24 +100,20 @@ def main(input_path_1, input_path_2, target_path_1, target_path_2, api_key, mode
     answer_col_name = f"{model}_answer"
     probs_col_name = f"{model}_probs"
 
-    data_handler.data_1[[answer_col_name, probs_col_name]] = data_handler.data_1.apply(solver.get_answer_and_probs, axis=1)
-    data_handler.data_2[[answer_col_name, probs_col_name]] = data_handler.data_2.apply(solver.get_answer_and_probs, axis=1)
+    for file_name, data in data_handler.data_files.items():
+        data[[answer_col_name, probs_col_name]] = data.apply(solver.get_answer_and_probs, axis=1)
 
     data_handler.save_data()
     
 
 if __name__ == "__main__":
-    if len(sys.argv) != 7:
-        print("Usage: python script_name.py <input_path_1> <input_path_2> <target_path_1> <target_path_2> <api_key> <model>")
+    if len(sys.argv) != 5:
+        print("Usage: python script_name.py <input_folder> <output_folder> <api_key> <model>")
         sys.exit(1)
     
-    input_path_1 = sys.argv[1]
-    input_path_2 = sys.argv[2]
-    target_path_1 = sys.argv[3]
-    target_path_2 = sys.argv[4]
-    api_key = sys.argv[5]
-    model = sys.argv[6]
+    input_folder = sys.argv[1]
+    output_folder = sys.argv[2]
+    api_key = sys.argv[3]
+    model = sys.argv[4]
 
-    main(input_path_1, input_path_2, target_path_1, target_path_2, api_key, model)
-
-
+    main(input_folder, output_folder, api_key, model)
